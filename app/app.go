@@ -15,6 +15,7 @@ import (
 type App struct {
 	Router      *mux.Router
 	Middlewares *Middleware
+	config      *Env
 }
 
 type route map[string]http.HandlerFunc
@@ -29,10 +30,11 @@ type shortenResp struct {
 }
 
 // Initialize init app
-func (a *App) Initialize() {
+func (a *App) Initialize(e *Env) {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	a.Router = mux.NewRouter()
 	a.Middlewares = &Middleware{}
+	a.config = e
 	a.initializeRoutes()
 }
 
@@ -72,7 +74,6 @@ func (a *App) getShortlinkInfo(w http.ResponseWriter, r *http.Request) {
 	s := vals.Get("shortlink")
 
 	fmt.Println("getShortlinkInfo", s)
-	panic(s)
 }
 
 func (a *App) redirect(w http.ResponseWriter, r *http.Request) {

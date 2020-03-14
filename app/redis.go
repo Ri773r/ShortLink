@@ -84,7 +84,7 @@ func (r *RedisCli) Shorten(url string, exp int64) (string, error) {
 	}
 
 	// store the url against the hash of it
-	er = r.Cli.Set(fmt.Sprintf(URLHashKey, h), eid,
+	err = r.Cli.Set(fmt.Sprintf(URLHashKey, h), eid,
 		time.Minute*time.Duration(exp)).Err()
 	if err != nil {
 		return "", err

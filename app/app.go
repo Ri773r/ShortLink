@@ -8,11 +8,13 @@ import (
 
 	"github.com/gookit/validate"
 	"github.com/gorilla/mux"
+	"github.com/justinas/alice"
 )
 
 // App contain router and middleware
 type App struct {
-	Router *mux.Router
+	Router      *mux.Router
+	Middlewares *Middleware
 }
 
 type route map[string]http.HandlerFunc
@@ -30,14 +32,16 @@ type shortenResp struct {
 func (a *App) Initialize() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	a.Router = mux.NewRouter()
+	a.Middlewares = &Middleware{}
 	a.initializeRoutes()
 }
 
 // initializeRoutes init route
 func (a *App) initializeRoutes() {
-	a.Router.HandleFunc("/api/shorten", a.createShortlink).Methods("POST")
-	a.Router.HandleFunc("/api/info", a.getShortlinkInfo).Methods("GET")
-	a.Router.HandleFunc("/{shortlink:[a-zA-Z0-9]+}", a.redirect).Methods("GET")
+	m := alice.New(a.Middlewares.LoggingHandler, a.Middlewares.RecoverHandler)
+	a.Router.Handle("/api/shorten", m.ThenFunc(a.createShortlink)).Methods("POST")
+	a.Router.Handle("/api/info", m.ThenFunc(a.getShortlinkInfo)).Methods("GET")
+	a.Router.Handle("/{shortlink:[a-zA-Z0-9]+}", m.ThenFunc(a.redirect)).Methods("GET")
 }
 
 func (a *App) createShortlink(w http.ResponseWriter, r *http.Request) {
@@ -68,6 +72,7 @@ func (a *App) getShortlinkInfo(w http.ResponseWriter, r *http.Request) {
 	s := vals.Get("shortlink")
 
 	fmt.Println("getShortlinkInfo", s)
+	panic(s)
 }
 
 func (a *App) redirect(w http.ResponseWriter, r *http.Request) {

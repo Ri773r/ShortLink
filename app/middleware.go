@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Middleware customize Middleware struct
 type Middleware struct {
 }
 

@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gookit/validate"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
+	"gopkg.in/validator.v2"
 )
 
 // App contain router and middleware
@@ -21,8 +21,8 @@ type App struct {
 type route map[string]http.HandlerFunc
 
 type shortenReq struct {
-	URL                 string `json:"url" validate:"required"`
-	ExpirationInMinutes int64  `json:"expiration_in_minutes" validate:"min:0"`
+	URL                 string `json:"url" validate:"nonzero"`
+	ExpirationInMinutes int64  `json:"expiration_in_minutes" validate:"min=1"`
 }
 
 type shortenResp struct {
@@ -56,29 +56,45 @@ func (a *App) createShortlink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	v := validate.New(&req)
-	if v.Validate() {
-		fmt.Println(req)
-	} else {
+
+	if err := validator.Validate(req); err != nil {
 		respondWithError(w, StatusError{
 			http.StatusBadRequest,
-			fmt.Errorf("validate parameters failed \n %v", v.Errors),
+			fmt.Errorf("validate parameters failed \n %v", err),
 		})
 		return
 	}
-	fmt.Println("createShortlink")
+
+	s, err := a.config.S.Shorten(req.URL, req.ExpirationInMinutes)
+	if err != nil {
+		respondWithError(w, err)
+	} else {
+		respondWithJSON(w, http.StatusCreated, shortenResp{Shortlink: s})
+	}
+
 }
 
 func (a *App) getShortlinkInfo(w http.ResponseWriter, r *http.Request) {
 	vals := r.URL.Query()
 	s := vals.Get("shortlink")
 
-	fmt.Println("getShortlinkInfo", s)
+	d, err := a.config.S.ShortlinkInfo(s)
+	if err != nil {
+		respondWithError(w, err)
+	} else {
+		respondWithJSON(w, http.StatusOK, d)
+	}
 }
 
 func (a *App) redirect(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	fmt.Println("getShortlinkInfo", vars["shortlink"])
+	s := vars["shortlink"]
+	u, err := a.config.S.Unshorten(s)
+	if err != nil {
+		respondWithError(w, err)
+	} else {
+		http.Redirect(w, r, u, http.StatusTemporaryRedirect)
+	}
 }
 
 func respondWithError(w http.ResponseWriter, err error) {

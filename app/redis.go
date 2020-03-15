@@ -46,6 +46,7 @@ func NewRedisCli(addr string, passwd string, db int) *RedisCli {
 	return &RedisCli{Cli: c}
 }
 
+// Shorten convert url to shortlink
 func (r *RedisCli) Shorten(url string, exp int64) (string, error) {
 	// covert url to sha1 hash
 	h := toSha1(url)
@@ -60,6 +61,7 @@ func (r *RedisCli) Shorten(url string, exp int64) (string, error) {
 		if d == "{}" {
 			// expiration, noting to do
 		} else {
+			// Do not reset expiration time
 			return d, nil
 		}
 	}
@@ -117,7 +119,11 @@ func (r *RedisCli) ShortlinkInfo(eid string) (interface{}, error) {
 	} else if err != nil {
 		return "", err
 	} else {
-		return d, nil
+		jd := URLDetail{}
+		if err := json.Unmarshal([]byte(d), &jd); err != nil {
+			return "", err
+		}
+		return jd, nil
 	}
 }
 

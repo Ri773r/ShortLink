@@ -3,6 +3,7 @@ Short link generation service by golang
 # Install
 `go build .`  
 If you do not enable go modules, run `export GO111MODULE=on`, then run `go build .`  
+If you are in China, you can use a proxy download package, run `export GOPROXY=https://goproxy.cn`
 # Usage
 `./ShortLink`  
 # API

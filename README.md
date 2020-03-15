@@ -2,6 +2,7 @@
 Short link generation service by golang
 # Install
 `go build .`  
+If you do not enable go modules, run `export GO111MODULE=on`, then run `go build .`  
 # Usage
 `./ShortLink`  
 # API

@@ -3,6 +3,7 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -106,4 +107,28 @@ func (r *RedisCli) Shorten(url string, exp int64) (string, error) {
 	}
 
 	return eid, nil
+}
+
+// ShortlinkInfo return the detail of the shortlink
+func (r *RedisCli) ShortlinkInfo(eid string) (interface{}, error) {
+	d, err := r.Cli.Get(fmt.Sprintf(ShortlinkDetailKey, eid)).Result()
+	if err == redis.Nil {
+		return "", StatusError{http.StatusNotFound, fmt.Errorf(http.StatusText(http.StatusNotFound))}
+	} else if err != nil {
+		return "", err
+	} else {
+		return d, nil
+	}
+}
+
+// Unshorten convert shortlink to url
+func (r *RedisCli) Unshorten(eid string) (string, error) {
+	url, err := r.Cli.Get(fmt.Sprintf(ShortlinkKey, eid)).Result()
+	if err == redis.Nil {
+		return "", StatusError{http.StatusNotFound, fmt.Errorf(http.StatusText(http.StatusNotFound))}
+	} else if err != nil {
+		return "", err
+	} else {
+		return url, nil
+	}
 }
